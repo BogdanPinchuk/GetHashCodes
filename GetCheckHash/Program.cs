@@ -82,7 +82,7 @@ namespace GetCheckHash
             //    });
 
             // збереження даних
-            //Console.WriteLine("Do you want save data (Y/N)? Data will be rewriter!");
+            Console.WriteLine("Do you want save data (Y/N)? Data will be rewriter!");
             ConsoleKey key = Console.ReadKey().Key;
             if (key == ConsoleKey.Y || key == ConsoleKey.Enter)
             {
@@ -95,7 +95,7 @@ namespace GetCheckHash
             foreach (var item in hashCodes)
             {
                 //Console.WriteLine(item.ToString());
-                Console.WriteLine(new FileInfo(item.Key).Name);
+                Console.WriteLine(item.Key.Replace(path + @"\", string.Empty));
             }
 
             Console.WriteLine("\nМоя папка:");
