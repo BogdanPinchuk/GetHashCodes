@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace GetCheckHash
 {
@@ -52,11 +53,11 @@ namespace GetCheckHash
             // відображеня кирилиці
             Console.OutputEncoding = Encoding.Unicode;
 
+            //// синхронізація доступу
+            //object block = new object();
+
             // директорія
             string path = Directory.GetCurrentDirectory();
-
-            // каталоги
-            //string dirs = Directory.
 
             // список файлів в каталогах і підкаталогах
             string[] fileNames = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
@@ -64,14 +65,37 @@ namespace GetCheckHash
             // створення словника хеш-кодів всіх файлів в папці
             Dictionary<string, string> hashCodes = new Dictionary<string, string>();
 
+            // алгоритм розрахунку
+            HashNames algorithm = HashNames.MD5;
+
             // обчислення хеш-кодів
             for (int i = 0; i < fileNames.Length; i++)
-                hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], HashNames.MD5));
+                hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
+            // багатопотоковість
+            //Parallel.For(0, fileNames.Length,
+            //    i =>
+            //    {
+            //        lock (block)
+            //        {
+            //            hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
+            //        }
+            //    });
+
+            // збереження даних
+            //Console.WriteLine("Do you want save data (Y/N)? Data will be rewriter!");
+            ConsoleKey key = Console.ReadKey().Key;
+            if (key == ConsoleKey.Y || key == ConsoleKey.Enter)
+            {
+
+            }
+
+
 
 
             foreach (var item in hashCodes)
             {
-                Console.WriteLine(item.ToString());
+                //Console.WriteLine(item.ToString());
+                Console.WriteLine(new FileInfo(item.Key).Name);
             }
 
             Console.WriteLine("\nМоя папка:");
@@ -122,6 +146,34 @@ namespace GetCheckHash
             return result;
         }
 
+        /// <summary>
+        /// Збереження даних хеш-кодів
+        /// </summary>
+        /// <param name="path">шлях до файлу</param>
+        /// <param name="hashName">метод</param>
+        /// <param name="hashCodes">хеш-коди</param>
+        private static void SaveData(string path, HashNames hashName, Dictionary<string, string> hashCodes)
+        {
+            string fileName = path +
+                @"\HathCodes." +
+                Enum.GetName(hashName).ToString().ToLower();
 
+            try
+            {
+                using (StreamWriter sw = new StreamWriter(fileName, false, Encoding.UTF8))
+                {
+                    var data = new StringBuilder();
+                    foreach (var hash in hashCodes)
+                        data.AppendLine($"{hash.Value} *{new FileInfo(hash.Key).Name}");
+                }
+            }
+            catch (Exception ex)
+            {
+                var color = Console.BackgroundColor;
+                Console.BackgroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.BackgroundColor = color;
+            }
+        }
     }
 }
