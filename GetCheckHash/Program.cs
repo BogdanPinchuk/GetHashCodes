@@ -106,8 +106,8 @@ namespace GetCheckHash
                     string[] fileNames = listFileNames.ToArray(),
                         hashNames = listHashNames.ToArray();
 
-                    listFileNames.Clear();
-                    //listHashNames.Clear();
+                    listFileNames = new();
+                    //listHashNames = new();
 
                     // сповіщення про відсутність файлів
                     if (fileNames.Length != hashNames.Length)
@@ -115,16 +115,10 @@ namespace GetCheckHash
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("Not all files have a hash file!");
                         Console.ResetColor();
-
-                        // чекати до виходу
-                        Console.ReadKey(true);
-                        //break;
-                        Console.WriteLine();
-                        continue;
                     }
 
                     // розрахунок хеш-кодів
-                    hashCodes.Clear();
+                    hashCodes = new();
                     for (int i = 0; i < fileNames.Length; i++)
                         hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
 
@@ -174,10 +168,10 @@ namespace GetCheckHash
                     listFileNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() ==
                         $".{Enum.GetName(algorithm).ToString().ToLower()}"); ;
                     string[] fileNames = listFileNames.ToArray();
-                    listFileNames.Clear();
+                    listFileNames = new();
 
                     // розрахунок хеш-кодів
-                    hashCodes.Clear();
+                    hashCodes = new();
                     for (int i = 0; i < fileNames.Length; i++)
                         hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
 
@@ -218,7 +212,7 @@ namespace GetCheckHash
                     string[] fileNames = listHashNames.ToArray(),
                         hashNames = listHashNames.ToArray();
 
-                    listHashNames.Clear();
+                    listHashNames = new();
 
                     // видалення файлів
                     Console.ForegroundColor = ConsoleColor.Yellow;
