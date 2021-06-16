@@ -115,6 +115,12 @@ namespace GetCheckHash
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("Not all files have a hash file!");
                         Console.ResetColor();
+
+                        // чекати до виходу
+                        Console.ReadKey(true);
+                        //break;
+                        Console.WriteLine();
+                        continue;
                     }
 
                     // розрахунок хеш-кодів
@@ -132,7 +138,7 @@ namespace GetCheckHash
                         try
                         {
                             string fileName = hashName.Replace($".{Enum.GetName(algorithm).ToString().ToLower()}", "");
-                            CheckData(hashName, hashCodes[fileName], algorithm);
+                            CheckData(hashName, fileName, hashCodes[fileName], algorithm);
                         }
                         catch (Exception ex)
                         {
@@ -149,7 +155,9 @@ namespace GetCheckHash
 
                     // чекати до виходу
                     Console.ReadKey(true);
-                    break;
+                    //break;
+                    Console.WriteLine();
+                    continue;
                 }
                 // Створення файлів
                 else if (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2)
@@ -187,7 +195,9 @@ namespace GetCheckHash
 
                     // чекати до виходу
                     Console.ReadKey(true);
-                    break;
+                    //break;
+                    Console.WriteLine();
+                    continue;
                 }
                 // видалення всіх хеш-файлів
                 else if (key == ConsoleKey.D9 || key == ConsoleKey.NumPad9)
@@ -238,7 +248,9 @@ namespace GetCheckHash
 
                     // чекати до виходу
                     Console.ReadKey(true);
-                    break;
+                    //break;
+                    Console.WriteLine();
+                    continue;
                 }
                 // вихід
                 else if (key == ConsoleKey.D0 || key == ConsoleKey.NumPad0)
@@ -251,8 +263,8 @@ namespace GetCheckHash
                     Console.Clear();
                     continue;
                 }
-
             }
+            
             #region MultiThreading
             //// синхронізація доступу
             //object block = new object();
@@ -338,20 +350,25 @@ namespace GetCheckHash
         /// <summary>
         /// Перевірка хешів файлів
         /// </summary>
-        /// <param name="fileName">шлях до хеш-файлу</param>
+        /// <param name="hashfileName">шлях до хеш-файлу</param>
+        /// <param name="fileName">шлях до файлу</param>
         /// <param name="hashcode">хеш-код</param>
         /// <param name="hashName">метод</param>
-        private static void CheckData(string fileName, string hashcode, HashNames hashName)
+        private static void CheckData(string hashfileName, string fileName, string hashcode, HashNames hashName)
         {
             try
             {
-                using (StreamReader sr = new StreamReader(fileName, Encoding.UTF8))
+                using (StreamReader sr = new StreamReader(hashfileName, Encoding.UTF8))
                 {
+                    // зчитані дані із хеш-файла
                     string data = sr.ReadToEnd();
+                    // заголовок для виведення інформації
                     string header = string.Empty;
+                    // назва файлу розрахованого хеша
+                    string name = new FileInfo(fileName).Name;
 
                     // перевірка хеш-коду
-                    if (data.Contains(hashcode))
+                    if (data.Contains(hashcode) && data.Contains(name))
                     {
                         Console.ForegroundColor = ConsoleColor.Green;
                         header = "correct file: ";
