@@ -79,7 +79,7 @@ namespace GetCheckHash
             while (true)
             {
                 // запит на вибір
-                Console.WriteLine("What do you want?\n1. Checking files with md5 hash files?\n2. Create md5 hash file for each file?\n0. Exit.\n");
+                Console.WriteLine("What do you want?\n1. Checking files with md5 hash files?\n2. Create md5 hash file for each file?\n9. Delete all hash files!\n0. Exit.\n");
                 ConsoleKey key = Console.ReadKey(true).Key;
 
                 // Перевірка файлів
@@ -146,6 +146,7 @@ namespace GetCheckHash
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("All hash files were checked!\n");
                     Console.ResetColor();
+
                     // чекати до виходу
                     Console.ReadKey(true);
                     break;
@@ -182,6 +183,57 @@ namespace GetCheckHash
                     // завершення роботи
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("All hash files were created succesful!\n");
+                    Console.ResetColor();
+
+                    // чекати до виходу
+                    Console.ReadKey(true);
+                    break;
+                }
+                // видалення всіх хеш-файлів
+                else if (key == ConsoleKey.D9 || key == ConsoleKey.NumPad9)
+                {
+                    // директорія
+                    string path = Directory.GetCurrentDirectory();
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"Current directory:\n{path}\n");
+                    Console.ResetColor();
+
+                    // список файлів і хеш-файлів в каталогах і підкаталогах
+                    List<string> listHashNames = new();
+                    listHashNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
+
+                    listHashNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() !=
+                        $".{Enum.GetName(algorithm).ToString().ToLower()}");
+
+                    string[] fileNames = listHashNames.ToArray(),
+                        hashNames = listHashNames.ToArray();
+
+                    listHashNames.Clear();
+
+                    // видалення файлів
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Start deleting hash-files:");
+                    Console.ResetColor();
+                    try
+                    {
+                        foreach (var file in fileNames)
+                        {
+                            File.Delete(file);
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine($"delete: {file}");
+                            Console.ResetColor();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(ex.Message);
+                        Console.ResetColor();
+                    }
+
+                    // завершення роботи
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("All hash files were deleted!\n");
                     Console.ResetColor();
 
                     // чекати до виходу
