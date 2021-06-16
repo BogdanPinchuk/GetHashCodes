@@ -310,7 +310,7 @@ namespace GetCheckHash
                         Console.ForegroundColor = ConsoleColor.Red;
                         header = "incorrect file: ";
                         Console.WriteLine(header + data);
-                        Console.WriteLine("hash code of file: " + hashcode);
+                        Console.WriteLine("hash code file: " + hashcode);
                     }
 
                     Console.ResetColor();
