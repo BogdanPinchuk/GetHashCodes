@@ -49,6 +49,7 @@ namespace GetCheckHash
             /// </summary>
             SHA512,
         }
+
         //     SHA –System.Security.Cryptography.SHA1CryptoServiceProvider
         //     SHA1 –System.Security.Cryptography.SHA1CryptoServiceProvider
         //     System.Security.Cryptography.SHA1 –System.Security.Cryptography.SHA1CryptoServiceProvider
@@ -64,6 +65,7 @@ namespace GetCheckHash
         //     SHA512 –System.Security.Cryptography.SHA512Managed
         //     SHA-512 –System.Security.Cryptography.SHA512Managed
         //     System.Security.Cryptography.SHA512 –System.Security.Cryptography.SHA512Managed
+        private delegate HashAlgorithm Provider();
 
         static void Main()
         {
@@ -106,8 +108,8 @@ namespace GetCheckHash
                     string[] fileNames = listFileNames.ToArray(),
                         hashNames = listHashNames.ToArray();
 
-                    listFileNames = new();
-                    //listHashNames = new();
+                    listFileNames.Clear();
+                    //listHashNames.Clear();
 
                     // сповіщення про відсутність файлів
                     if (fileNames.Length != hashNames.Length)
@@ -118,7 +120,7 @@ namespace GetCheckHash
                     }
 
                     // розрахунок хеш-кодів
-                    hashCodes = new();
+                    hashCodes.Clear();
                     for (int i = 0; i < fileNames.Length; i++)
                         hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
 
@@ -168,10 +170,10 @@ namespace GetCheckHash
                     listFileNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() ==
                         $".{Enum.GetName(algorithm).ToString().ToLower()}"); ;
                     string[] fileNames = listFileNames.ToArray();
-                    listFileNames = new();
+                    listFileNames.Clear();
 
                     // розрахунок хеш-кодів
-                    hashCodes = new();
+                    hashCodes.Clear();
                     for (int i = 0; i < fileNames.Length; i++)
                         hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
 
@@ -212,7 +214,7 @@ namespace GetCheckHash
                     string[] fileNames = listHashNames.ToArray(),
                         hashNames = listHashNames.ToArray();
 
-                    listHashNames = new();
+                    listHashNames.Clear();
 
                     // видалення файлів
                     Console.ForegroundColor = ConsoleColor.Yellow;
@@ -258,7 +260,7 @@ namespace GetCheckHash
                     continue;
                 }
             }
-            
+
             #region MultiThreading
             //// синхронізація доступу
             //object block = new object();
@@ -286,14 +288,43 @@ namespace GetCheckHash
             // результат хеш-коду
             string result = string.Empty;
 
+            // провайдер
+            Provider provider;
+
             // розрахунок хеш-коду
             try
             {
-                using (FileStream fs = File.OpenRead(path))
-                using (HashAlgorithm algorithm = HashAlgorithm
-                    .Create(Enum.GetName(hashName).ToString()))
+                // instance algorithm
+                switch (hashName)
                 {
-                    byte[] checkSum = algorithm.ComputeHash(fs);
+                    case HashNames.SHA1:
+                        provider = SHA1.Create;
+                        break;
+                    case HashNames.MD5:
+                        provider = MD5.Create;
+                        break;
+                    case HashNames.SHA256:
+                        provider = SHA256.Create;
+                        break;
+                    case HashNames.SHA384:
+                        provider = SHA384.Create;
+                        break;
+                    case HashNames.SHA512:
+                        provider = SHA512.Create;
+                        break;
+                    default:
+                        provider = MD5.Create;
+                        break;
+                }
+
+                //using (FileStream fs = File.OpenRead(path))
+                using (FileStream fs = new FileInfo(path).OpenRead())
+                using (HashAlgorithm algorithm = provider())
+                //using (HashAlgorithm algorithm = HashAlgorithm
+                //    .Create(Enum.GetName(hashName).ToString()))
+                {
+                    algorithm?.Initialize();
+                    byte[] checkSum = algorithm?.ComputeHash(fs);
                     result = BitConverter
                         .ToString(checkSum)
                         .Replace("-", string.Empty)
@@ -302,10 +333,9 @@ namespace GetCheckHash
             }
             catch (Exception ex)
             {
-                var color = Console.BackgroundColor;
-                Console.BackgroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(ex.Message);
-                Console.BackgroundColor = color;
+                Console.ResetColor();
             }
 
             return result;

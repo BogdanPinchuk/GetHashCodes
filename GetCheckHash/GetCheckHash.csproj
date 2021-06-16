@@ -8,6 +8,10 @@
     <PackageIconUrl />
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="1.1.ico" />
     <None Include="..\..\Ico\2.1.ico">
