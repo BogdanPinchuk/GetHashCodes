@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace GetCheckHash
 {
@@ -121,55 +122,88 @@ namespace GetCheckHash
 
                     string[] fileNames = listFileNames.ToArray(),
                         hashNames = listHashNames.ToArray(),
-                        hashNWE = listHashNWE.ToArray();
+                        hashNWE = listHashNWE.ToArray(),
+                        hashE, fileE, fileIn;
 
-                    // різниця двох колекцій
-                    hashNWE = fileNames.Except(hashNWE).ToArray();
+                    // різниці двох колекцій
+                    // відсутність хеш-файлів
+                    hashE = fileNames.Except(hashNWE).ToArray();
+                    // відсутність файлів
+                    fileE = hashNWE.Except(fileNames).ToArray();
+                    // наявні файли з хешами
+                    fileIn = fileNames.Intersect(hashNWE).ToArray();
 
                     listFileNames.Clear();
                     //listHashNames.Clear();
                     listHashNWE.Clear();
 
-                    // сповіщення про відсутність файлів
-                    if (fileNames.Length != hashNames.Length)
+                    // при відсутності хеш-файлів
+                    if (hashE.Length > 0)
                     {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"Missing {hashE.Length} hash files:\n");
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Not all files have a hash file!: {hashNames.Length}/{fileNames.Length}.\n");
-
-                        foreach (var file in hashNWE)
-                            Console.WriteLine($"{file}");
-                        Console.ResetColor();
+                        foreach (var file in hashE)
+                            Console.WriteLine($"{file}.{Enum.GetName(algorithm).ToString().ToLower()}");
                         Console.WriteLine();
                     }
 
-                    // розрахунок хеш-кодів
-                    hashCodes.Clear();
-                    for (int i = 0; i < fileNames.Length; i++)
-                        hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
-
-                    // перевірка хеш-файлів
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("Start checking hash-files:");
-                    Console.ResetColor();
-
-                    foreach (var hashName in listHashNames)
+                    // при відсутності файлів
+                    if (fileE.Length > 0)
                     {
-                        try
-                        {
-                            string fileName = hashName.Replace($".{Enum.GetName(algorithm).ToString().ToLower()}", "");
-                            CheckData(hashName, fileName, hashCodes[fileName]);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine(ex.Message);
-                            Console.ResetColor();
-                        }
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"Missing {fileE.Length} files:\n");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        foreach (var file in fileE)
+                            Console.WriteLine($"{file}");
+                        Console.WriteLine();
                     }
 
+                    #region // сповіщення про відсутність файлів
+                    /*if (fileNames.Length != hashNames.Length)
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine($"Not all files have a hash file!: {hashNames.Length}/{fileNames.Length}.\n");
+
+                                    foreach (var file in hashNWE)
+                                        Console.WriteLine($"{file}");
+                                    Console.ResetColor();
+                                    Console.WriteLine();
+                                }*/
+                    #endregion
+
+                    // якщо є відповідні файшли з хешами
+                    if (fileIn.Length > 0)
+                    {
+                        // розрахунок хеш-кодів
+                        hashCodes.Clear();
+                        for (int i = 0; i < fileIn.Length; i++)
+                            hashCodes.Add(fileIn[i], GetHashCode(fileIn[i], algorithm));
+
+                        // перевірка хеш-файлів
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("Start checking hash-files:");
+                        Console.ResetColor();
+
+                        for (int i = 0; i < fileIn.Length; i++)
+                        {
+                            try
+                            {
+                                string hashName = $"{fileIn[i]}.{Enum.GetName(algorithm).ToString().ToLower()}";
+                                CheckData(hashName, fileIn[i], hashCodes[fileIn[i]]);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine(ex.Message);
+                                Console.ResetColor();
+                            }
+                        }
+                    }
+                    
                     // завершення роботи
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("All hash files were checked!\n");
+                    Console.WriteLine("All files were checked!\n");
                     Console.ResetColor();
 
                     // чекати до виходу
@@ -406,8 +440,18 @@ namespace GetCheckHash
                     Console.WriteLine($"file cheking: {fileName}");
                     Console.ResetColor();
 
+                    // регулярні вирази
+                    // хеш-код
+                    Regex regex = new(@"\S+\s\*");
+                    string hash = regex.Match(data).Value.Replace(" *", string.Empty);
+
+                    // назва файлу
+                    regex = new(@"\s\*\S*");
+                    string findName = regex.Match(data).Value.Replace(" *", string.Empty);
+
                     // перевірка хеш-коду
-                    if (data.Contains(hashcode) && data.Contains(name))
+                    //if (data.Contains(hashcode) && data.Contains(name))
+                    if (hashcode == hash && name == findName)
                     {
                         Console.ForegroundColor = ConsoleColor.Green;
                         header = "correct file: ";
@@ -418,7 +462,7 @@ namespace GetCheckHash
                         Console.ForegroundColor = ConsoleColor.Red;
                         header = "incorrect file: ";
                         Console.WriteLine(header + data);
-                        Console.WriteLine("hash code file: " + hashcode);
+                        Console.WriteLine($"hash code file: {hashcode} *{name}");
                     }
 
                     Console.ResetColor();
