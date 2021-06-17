@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -21,6 +22,10 @@ namespace GetCheckHash
             /// Українська
             /// </summary>
             Ukrainian,
+            /// <summary>
+            /// Російська
+            /// </summary>
+            Russian,
         }
 
         /// <summary>
@@ -96,6 +101,9 @@ namespace GetCheckHash
                     // список файлів і хеш-файлів в каталогах і підкаталогах
                     List<string> listFileNames = new();
                     List<string> listHashNames = new();
+                    // список хеш-файлів без розширення
+                    List<string> listHashNWE = new();
+
                     listFileNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
                     // копіювання
                     listHashNames.AddRange(listFileNames);
@@ -105,18 +113,33 @@ namespace GetCheckHash
                     listHashNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() !=
                         $".{Enum.GetName(algorithm).ToString().ToLower()}");
 
+                    // видалення розширень файлів
+                    listHashNWE.AddRange(listHashNames);
+                    listHashNWE = listHashNWE
+                        .Select(i => i.Replace($".{Enum.GetName(algorithm).ToString().ToLower()}", string.Empty))
+                        .ToList();
+
                     string[] fileNames = listFileNames.ToArray(),
-                        hashNames = listHashNames.ToArray();
+                        hashNames = listHashNames.ToArray(),
+                        hashNWE = listHashNWE.ToArray();
+
+                    // різниця двох колекцій
+                    hashNWE = fileNames.Except(hashNWE).ToArray();
 
                     listFileNames.Clear();
                     //listHashNames.Clear();
+                    listHashNWE.Clear();
 
                     // сповіщення про відсутність файлів
                     if (fileNames.Length != hashNames.Length)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Not all files have a hash file!");
+                        Console.WriteLine($"Not all files have a hash file!: {hashNames.Length}/{fileNames.Length}.\n");
+
+                        foreach (var file in hashNWE)
+                            Console.WriteLine($"{file}");
                         Console.ResetColor();
+                        Console.WriteLine();
                     }
 
                     // розрахунок хеш-кодів
@@ -134,7 +157,7 @@ namespace GetCheckHash
                         try
                         {
                             string fileName = hashName.Replace($".{Enum.GetName(algorithm).ToString().ToLower()}", "");
-                            CheckData(hashName, fileName, hashCodes[fileName], algorithm);
+                            CheckData(hashName, fileName, hashCodes[fileName]);
                         }
                         catch (Exception ex)
                         {
@@ -295,33 +318,21 @@ namespace GetCheckHash
             try
             {
                 // instance algorithm
-                switch (hashName)
+                provider = hashName switch
                 {
-                    case HashNames.SHA1:
-                        provider = SHA1.Create;
-                        break;
-                    case HashNames.MD5:
-                        provider = MD5.Create;
-                        break;
-                    case HashNames.SHA256:
-                        provider = SHA256.Create;
-                        break;
-                    case HashNames.SHA384:
-                        provider = SHA384.Create;
-                        break;
-                    case HashNames.SHA512:
-                        provider = SHA512.Create;
-                        break;
-                    default:
-                        provider = MD5.Create;
-                        break;
-                }
+                    HashNames.SHA1 => SHA1.Create,
+                    HashNames.MD5 => MD5.Create,
+                    HashNames.SHA256 => SHA256.Create,
+                    HashNames.SHA384 => SHA384.Create,
+                    HashNames.SHA512 => SHA512.Create,
+                    _ => MD5.Create,
+                };
 
                 //using (FileStream fs = File.OpenRead(path))
-                using (FileStream fs = new FileInfo(path).OpenRead())
-                using (HashAlgorithm algorithm = provider())
                 //using (HashAlgorithm algorithm = HashAlgorithm
                 //    .Create(Enum.GetName(hashName).ToString()))
+                using (FileStream fs = new FileInfo(path).OpenRead())
+                using (HashAlgorithm algorithm = provider())
                 {
                     algorithm?.Initialize();
                     byte[] checkSum = algorithm?.ComputeHash(fs);
@@ -350,7 +361,7 @@ namespace GetCheckHash
         private static void SaveData(string fileName, string hashcode, HashNames hashName)
         {
             // назва нового файлу
-            string newName = fileName + ".md5";
+            string newName = fileName + $".{Enum.GetName(hashName).ToString().ToLower()}";
 
             try
             {
@@ -377,12 +388,11 @@ namespace GetCheckHash
         /// <param name="hashfileName">шлях до хеш-файлу</param>
         /// <param name="fileName">шлях до файлу</param>
         /// <param name="hashcode">хеш-код</param>
-        /// <param name="hashName">метод</param>
-        private static void CheckData(string hashfileName, string fileName, string hashcode, HashNames hashName)
+        private static void CheckData(string hashfileName, string fileName, string hashcode)
         {
             try
             {
-                using (StreamReader sr = new StreamReader(hashfileName, Encoding.UTF8))
+                using (StreamReader sr = new(hashfileName, Encoding.UTF8))
                 {
                     // зчитані дані із хеш-файла
                     string data = sr.ReadToEnd();
@@ -390,6 +400,11 @@ namespace GetCheckHash
                     string header = string.Empty;
                     // назва файлу розрахованого хеша
                     string name = new FileInfo(fileName).Name;
+
+                    // шлях до файлу
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"file cheking: {fileName}");
+                    Console.ResetColor();
 
                     // перевірка хеш-коду
                     if (data.Contains(hashcode) && data.Contains(name))
