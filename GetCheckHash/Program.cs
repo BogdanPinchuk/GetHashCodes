@@ -103,8 +103,9 @@ namespace GetCheckHash
                     List<string> listFileNames = new();
                     List<string> listHashNames = new();
                     // список хеш-файлів без розширення
-                    List<string> listHashNWE = new();
+                    //List<string> listHashNWE = new();
 
+                    // всі файли в папці
                     listFileNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
                     // копіювання
                     listHashNames.AddRange(listFileNames);
@@ -115,14 +116,12 @@ namespace GetCheckHash
                         $".{Enum.GetName(algorithm).ToString().ToLower()}");
 
                     // видалення розширень файлів
-                    listHashNWE.AddRange(listHashNames);
-                    listHashNWE = listHashNWE
+                    listHashNames = listHashNames
                         .Select(i => i.Replace($".{Enum.GetName(algorithm).ToString().ToLower()}", string.Empty))
                         .ToList();
 
                     string[] fileNames = listFileNames.ToArray(),
-                        hashNames = listHashNames.ToArray(),
-                        hashNWE = listHashNWE.ToArray(),
+                        hashNWE = listHashNames.ToArray(),
                         hashE, fileE, fileIn;
 
                     // різниці двох колекцій
@@ -135,7 +134,7 @@ namespace GetCheckHash
 
                     listFileNames.Clear();
                     //listHashNames.Clear();
-                    listHashNWE.Clear();
+                    listHashNames.Clear();
 
                     // при відсутності хеш-файлів
                     if (hashE.Length > 0)
@@ -317,21 +316,6 @@ namespace GetCheckHash
                     continue;
                 }
             }
-
-            #region MultiThreading
-            //// синхронізація доступу
-            //object block = new object();
-
-            // багатопотоковість
-            //Parallel.For(0, fileNames.Length,
-            //    i =>
-            //    {
-            //        lock (block)
-            //        {
-            //            hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
-            //        }
-            //    });
-            #endregion
         }
 
         /// <summary>
