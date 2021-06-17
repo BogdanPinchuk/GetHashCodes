@@ -136,7 +136,6 @@ namespace GetCheckHash
                     fileIn = fileNames.Intersect(hashNWE).ToArray();
 
                     listFileNames.Clear();
-                    //listHashNames.Clear();
                     listHashNames.Clear();
 
                     // при відсутності хеш-файлів
@@ -160,19 +159,6 @@ namespace GetCheckHash
                             Console.WriteLine($"{file}");
                         Console.WriteLine();
                     }
-
-                    #region // сповіщення про відсутність файлів
-                    /*if (fileNames.Length != hashNames.Length)
-                                {
-                                    Console.ForegroundColor = ConsoleColor.Red;
-                                    Console.WriteLine($"Not all files have a hash file!: {hashNames.Length}/{fileNames.Length}.\n");
-
-                                    foreach (var file in hashNWE)
-                                        Console.WriteLine($"{file}");
-                                    Console.ResetColor();
-                                    Console.WriteLine();
-                                }*/
-                    #endregion
 
                     // якщо є відповідні файшли з хешами
                     if (fileIn.Length > 0)
