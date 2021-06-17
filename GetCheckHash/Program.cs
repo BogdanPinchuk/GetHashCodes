@@ -73,6 +73,11 @@ namespace GetCheckHash
         //     System.Security.Cryptography.SHA512 –System.Security.Cryptography.SHA512Managed
         private delegate HashAlgorithm Provider();
 
+        /// <summary>
+        /// Лічильник кількості помилок
+        /// </summary>
+        private static long counter;
+
         static void Main()
         {
             // відображеня кирилиці
@@ -174,6 +179,9 @@ namespace GetCheckHash
                     // якщо є відповідні файшли з хешами
                     if (fileIn.Length > 0)
                     {
+                        // скидання лічильника
+                        counter = 0;
+
                         // розрахунок хеш-кодів
                         hashCodes.Clear();
                         for (int i = 0; i < fileIn.Length; i++)
@@ -198,6 +206,11 @@ namespace GetCheckHash
                                 Console.ResetColor();
                             }
                         }
+
+                        // розрахунок проблемних файлів
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"Found {counter} error files!\n");
+                        Console.ResetColor();
                     }
                     
                     // завершення роботи
@@ -447,6 +460,8 @@ namespace GetCheckHash
                         header = "incorrect file: ";
                         Console.WriteLine(header + data);
                         Console.WriteLine($"hash code file: {hashcode} *{name}");
+                        // враховуємо помилку
+                        counter++;
                     }
 
                     Console.ResetColor();
