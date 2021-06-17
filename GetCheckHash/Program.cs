@@ -107,8 +107,6 @@ namespace GetCheckHash
                     // список файлів і хеш-файлів в каталогах і підкаталогах
                     List<string> listFileNames = new();
                     List<string> listHashNames = new();
-                    // список хеш-файлів без розширення
-                    //List<string> listHashNWE = new();
 
                     // всі файли в папці
                     listFileNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
