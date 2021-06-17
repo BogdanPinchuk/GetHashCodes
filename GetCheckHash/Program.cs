@@ -182,7 +182,7 @@ namespace GetCheckHash
 
                         // перевірка хеш-файлів
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine("Start checking hash-files:");
+                        Console.WriteLine($"Start checking {fileIn.Length} files with hash-files:");
                         Console.ResetColor();
 
                         for (int i = 0; i < fileIn.Length; i++)
