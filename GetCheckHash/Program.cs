@@ -193,7 +193,7 @@ namespace GetCheckHash
 
                         // розрахунок проблемних файлів
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine($"Found {counter} error files!\n");
+                        Console.WriteLine($"Found {counter}/{fileIn.Length} error files!\n");
                         Console.ResetColor();
                     }
                     
