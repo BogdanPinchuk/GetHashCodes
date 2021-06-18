@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -11,9 +12,24 @@ namespace GetCheckHash
     class Program
     {
         /// <summary>
+        /// Користувач
+        /// </summary>
+        private enum User
+        {
+            /// <summary>
+            /// Розробник
+            /// </summary>
+            Developer,
+            /// <summary>
+            /// клієнт
+            /// </summary>
+            Customer,
+        }
+
+        /// <summary>
         /// Локалізація інтерфейсу
         /// </summary>
-        enum Localization
+        private enum Localization
         {
             /// <summary>
             /// Англійська
@@ -32,7 +48,7 @@ namespace GetCheckHash
         /// <summary>
         /// Алгоритм розрахунку хеш-кодів
         /// </summary>
-        enum HashNames
+        private enum HashNames
         {
             /// <summary>
             /// SHA1CryptoServiceProvider
@@ -83,6 +99,9 @@ namespace GetCheckHash
             // відображеня кирилиці
             Console.OutputEncoding = Encoding.Unicode;
 
+            // установка користувача (розробник/клієнт)
+            User user = User.Developer;
+
             // створення словника хеш-кодів всіх файлів в папці
             Dictionary<string, string> hashCodes = new();
 
@@ -104,17 +123,35 @@ namespace GetCheckHash
                     Console.WriteLine($"Current directory:\n{path}\n");
                     Console.ResetColor();
 
+                    // назва виконуваного файлу
+                    string nameExe = Process.GetCurrentProcess().MainModule.FileName;
+
                     // список файлів і хеш-файлів в каталогах і підкаталогах
                     List<string> listFileNames = new();
                     List<string> listHashNames = new();
 
                     // всі файли в папці
                     listFileNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
+
+                    // видалення назви виконуваного файлу
+                    if (user == User.Developer)
+                        listFileNames.Remove(nameExe);
+
+                    // знаходження і видалення назв звітних файлів
+                    string[] reportFiles = listFileNames
+                        .Where(i => new FileInfo(i).Extension.ToLower() == ".report")
+                        .Select(i => i)
+                        .ToArray();
+
+                    listFileNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() == ".report");
+
                     // копіювання
                     listHashNames.AddRange(listFileNames);
 
+                    // видалення назв з розширеннями хешу
                     listFileNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() ==
                         $".{Enum.GetName(algorithm).ToString().ToLower()}");
+                    // видалення назв з звичайних файлів
                     listHashNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() !=
                         $".{Enum.GetName(algorithm).ToString().ToLower()}");
 
@@ -196,7 +233,11 @@ namespace GetCheckHash
                         Console.WriteLine($"Found {counter}/{fileIn.Length} error files!\n");
                         Console.ResetColor();
                     }
-                    
+
+
+                    // перевірка всіх необхідних файлів
+
+
                     // завершення роботи
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("All files were checked!\n");
@@ -217,9 +258,20 @@ namespace GetCheckHash
                     Console.WriteLine($"Current directory:\n{path}\n");
                     Console.ResetColor();
 
+                    // назва виконуваного файлу
+                    string nameExe = Process.GetCurrentProcess().MainModule.FileName;
+
                     // список файлів в каталогах і підкаталогах
                     List<string> listFileNames = new();
                     listFileNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
+
+                    // видалення назви виконуваного файлу
+                    if (user == User.Developer)
+                        listFileNames.Remove(nameExe);
+
+                    // видалення назв звітних файлів
+                    listFileNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() == ".report");
+
                     listFileNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() ==
                         $".{Enum.GetName(algorithm).ToString().ToLower()}"); ;
                     string[] fileNames = listFileNames.ToArray();
@@ -230,16 +282,25 @@ namespace GetCheckHash
                     for (int i = 0; i < fileNames.Length; i++)
                         hashCodes.Add(fileNames[i], GetHashCode(fileNames[i], algorithm));
 
+                    Console.WriteLine();
+                    // для списку файлів
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Start creating report-file:");
+                    Console.ResetColor();
+                    SaveReport(nameExe, hashCodes, algorithm);
+
+                    Console.WriteLine();
                     // створення хеш-файлів
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("Start creating hash-files:");
                     Console.ResetColor();
+                    // для кожного файлу
                     foreach (var hash in hashCodes)
                         SaveData(hash.Key, hash.Value, algorithm);
 
                     // завершення роботи
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("All hash files were created succesful!\n");
+                    Console.WriteLine("\nAll hash files were created succesful!\n");
                     Console.ResetColor();
 
                     // чекати до виходу
@@ -262,7 +323,8 @@ namespace GetCheckHash
                     listHashNames.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
 
                     listHashNames.RemoveAll(i => new FileInfo(i).Extension.ToLower() !=
-                        $".{Enum.GetName(algorithm).ToString().ToLower()}");
+                        $".{Enum.GetName(algorithm).ToString().ToLower()}" && new FileInfo(i).Extension.ToLower() !=
+                        $".report");
 
                     string[] fileNames = listHashNames.ToArray(),
                         hashNames = listHashNames.ToArray();
@@ -319,7 +381,7 @@ namespace GetCheckHash
         /// Отрмання хеш-коду файлу
         /// </summary>
         /// <param name="path">шлях до файлу</param>
-        /// <param name="hashName">метод</param>
+        /// <param name="hashName">алгоритм</param>
         /// <returns>хеш-коди</returns>
         private static string GetHashCode(string path, HashNames hashName)
         {
@@ -372,7 +434,7 @@ namespace GetCheckHash
         /// </summary>
         /// <param name="fileName">шлях до файлу</param>
         /// <param name="hashcode">хеш-код</param>
-        /// <param name="hashName">метод</param>
+        /// <param name="hashName">алгоритм</param>
         private static void SaveData(string fileName, string hashcode, HashNames hashName)
         {
             // назва нового файлу
@@ -388,6 +450,64 @@ namespace GetCheckHash
                     Console.WriteLine(data);
                     Console.ResetColor();
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+            }
+        }
+
+        /// <summary>
+        /// Збереження звіту по всіх файлах в папці
+        /// </summary>
+        /// <param name="nameExe">Назва виконуваного файлу</param>
+        /// <param name="hashCodes">список хеш-кодів</param>
+        /// <param name="hashName">алгоритм</param>
+        private static void SaveReport(string nameExe, Dictionary<string, string> hashCodes, HashNames hashName)
+        {
+            try
+            {
+                // повна назва поточної папки
+                string fullNameCurFolder = Directory.GetCurrentDirectory();
+                // назва поточної папки
+                string nameCurFolder = fullNameCurFolder.Substring(fullNameCurFolder.LastIndexOf("\\") + 1);
+
+                using (StreamWriter sw = new($"{nameCurFolder}.report", false, Encoding.UTF8))
+                {
+                    string data = string.Empty;
+
+                    foreach (var file in hashCodes)
+                    {
+                        data = file.Key.Replace(fullNameCurFolder + "\\", string.Empty);
+                        sw.WriteLine(data);
+                    }
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"{fullNameCurFolder}\\{nameCurFolder}.report");
+                    Console.ResetColor();
+                }
+
+                //using (BinaryWriter bw = new(new FileStream($"{nameCurFolder}.report", FileMode.Create)))
+                //{
+                //    string data = string.Empty;
+
+                //    foreach (var file in hashCodes)
+                //    {
+                //        data = file.Key.Replace(fullNameCurFolder + "\\", string.Empty);
+                //        bw.Write(data);
+                //    }
+                //}
+
+                //using (BinaryReader br = new(new FileStream($"{nameCurFolder}.report", FileMode.Open)))
+                //{
+                //    List<string> data = new();
+                //    while (br.PeekChar() > -1)
+                //        data.Add(br.ReadString());
+
+                //}
+
             }
             catch (Exception ex)
             {
